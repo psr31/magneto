@@ -10,7 +10,7 @@ pub struct Program {
 
 impl Program {
     pub fn new_from_srcs(vert_src: &str, frag_src: &str) -> Program {
-        let mut id = 0;
+        let id;
         unsafe {
             let cs = CString::new(vert_src.as_bytes()).unwrap();
             let v_shader = gl::CreateShader(gl::VERTEX_SHADER);
