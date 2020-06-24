@@ -1,0 +1,9 @@
+[package]
+name = "magneto"
+version = "0.1.0"
+authors = ["psr31"]
+edition = "2018"
+
+[dependencies]
+sdl2 = "0.34"
+gl = "0.23.4"
