@@ -6,4 +6,4 @@ edition = "2018"
 
 [dependencies]
 sdl2 = "0.34"
-gl = "0.23.4"
+gl = "0.14.0"
