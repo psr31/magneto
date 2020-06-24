@@ -5,12 +5,52 @@ use sdl2::Sdl;
 
 pub mod graphics;
 use graphics::shader::Program;
+use graphics::vertex_buffer;
+use vertex_buffer::VertexArrayObject;
+use vertex_buffer::Buffer;
+
+const TRIANGLE_BOX: [f32; 12] = [
+    0.0, 0.0,
+    1.0, 0.0,
+    1.0, 1.0,
+    0.0, 0.0,
+    0.0, 1.0,
+    1.0, 1.0,
+];
+
+struct BaseRectangle {
+    vao: VertexArrayObject,
+    program: Program,
+}
+
+impl BaseRectangle {
+    fn new() -> BaseRectangle {
+        let mut vao = VertexArrayObject::new();
+        let mut vbo = Buffer::new();
+        vao.bind();
+        vbo.bind();
+        vertex_buffer::buffer_data(TRIANGLE_BOX.to_vec());
+        vertex_buffer::vertex_attrib_pointer(0, 2, 2, 0);
+        vbo.unbind();
+        vao.unbind();
+
+        let program = Program::new_from_srcs(
+            include_str!("../resources/rect_vert.glsl"),
+            include_str!("../resources/rect_frag.glsl"),
+        );
+
+        BaseRectangle {
+            vao: vao,
+            program: program,
+        }
+    }
+}
 
 pub struct Context {
     pub sdl_context: Sdl,
     window: Window,
     gl_context: GLContext,
-    rect_shader: Program,
+    base_rect: BaseRectangle,
     viewport_width: f32,
     viewport_height: f32,
 }
@@ -32,16 +72,13 @@ impl Context {
         let ctx = window.gl_create_context().unwrap();
         gl::load_with(|name| video_subsystem.gl_get_proc_address(name) as *const _);
 
-        let rect_shader = Program::new_from_srcs(
-            include_str!("../resources/rect_vert.glsl"),
-            include_str!("../resources/rect_frag.glsl"),
-        );
+        let base_rect = BaseRectangle::new();
 
         Context {
             sdl_context: sdl_context,
             window: window,
             gl_context: ctx,
-            rect_shader: rect_shader,
+            base_rect: base_rect,
             viewport_width: window_width as f32,
             viewport_height: window_height as f32,
         }
