@@ -4,17 +4,20 @@ pub mod gl_texture;
 pub mod texture;
 pub mod base_rectangle;
 pub mod color;
+pub mod text;
 
 // Public uses
 pub use gl_texture::GlTexture;
 pub use texture::Texture;
 pub use color::Color;
+pub use text::Font;
 
 use crate::Context;
 
 pub fn enable_blending() {
     unsafe {
         gl::Enable(gl::MULTISAMPLE);
+        gl::PixelStorei(gl::UNPACK_ALIGNMENT, 1);
         gl::Enable(gl::BLEND);
         gl::BlendEquation(gl::FUNC_ADD);
         gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);

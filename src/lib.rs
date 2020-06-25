@@ -12,6 +12,8 @@ pub struct Context {
     gl_context: GLContext,
     color_rect: BaseRectangle,
     sprite_rect: BaseRectangle,
+    text_rect: BaseRectangle,
+    ft_lib: freetype::Library,
     viewport_width: f32,
     viewport_height: f32,
 }
@@ -33,8 +35,12 @@ impl Context {
         let ctx = window.gl_create_context().unwrap();
         gl::load_with(|name| video_subsystem.gl_get_proc_address(name) as *const _);
 
+        // Initialise Freetype
+        let ft_lib = freetype::Library::init().unwrap();
+
         let color_rect = BaseRectangle::new_colored();
         let sprite_rect = BaseRectangle::new_textured();
+        let text_rect = BaseRectangle::new_text();
 
         graphics::enable_blending();
 
@@ -44,6 +50,8 @@ impl Context {
             gl_context: ctx,
             color_rect: color_rect,
             sprite_rect: sprite_rect,
+            text_rect: text_rect,
+            ft_lib: ft_lib,
             viewport_width: window_width as f32,
             viewport_height: window_height as f32,
         }

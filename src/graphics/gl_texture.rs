@@ -1,13 +1,30 @@
 use std::mem;
 
+pub enum Format {
+    Rgba,
+    Red,
+}
+
+
+impl Format{
+    pub fn as_gl_id(&self) -> i32 {
+        match self {
+            Format::Rgba => gl::RGBA as i32,
+            Format::Red => gl::RED as i32,
+        }
+    }
+}
+
 pub enum Wrap {
     Repeat,
+    ClampEdge,
 }
 
 impl Wrap{
     pub fn as_gl_id(&self) -> i32 {
         match self {
             Wrap::Repeat => gl::REPEAT as i32,
+            Wrap::ClampEdge => gl::CLAMP_TO_EDGE as i32,
         }
     }
 }
@@ -60,9 +77,9 @@ pub fn generate_mipmap() {
     }
 }
 
-pub fn assign_image(data: Vec<u8>, w: u32, h: u32) {
+pub fn assign_image(data: Vec<u8>, w: u32, h: u32, format: Format) {
     unsafe {
-        gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGBA as i32, w as i32, h as i32, 0, gl::RGBA, gl::UNSIGNED_BYTE, mem::transmute(&data[0]));
+        gl::TexImage2D(gl::TEXTURE_2D, 0, format.as_gl_id(), w as i32, h as i32, 0, format.as_gl_id() as u32, gl::UNSIGNED_BYTE, mem::transmute(&data[0]));
     }
 }
 

@@ -4,7 +4,7 @@
 */
 
 use crate::graphics::GlTexture;
-use crate::graphics::gl_texture::{self, Wrap, Filter};
+use crate::graphics::gl_texture::{self, Wrap, Filter, Format};
 
 use std::path::Path;
 
@@ -30,7 +30,7 @@ impl Texture {
         
         let tex = GlTexture::new();
         tex.bind();
-        gl_texture::assign_image(image_buffer.into_raw(), width, height);
+        gl_texture::assign_image(image_buffer.into_raw(), width, height, Format::Rgba);
         gl_texture::set_parameters(Wrap::Repeat, Filter::Nearest);
         tex.unbind();
 
@@ -55,7 +55,7 @@ impl Texture {
         
         let tex = GlTexture::new();
         tex.bind();
-        gl_texture::assign_image(image_buffer.into_raw(), width, height);
+        gl_texture::assign_image(image_buffer.into_raw(), width, height, Format::Rgba);
         gl_texture::set_parameters(Wrap::Repeat, Filter::Nearest);
         tex.unbind();
 
@@ -67,6 +67,24 @@ impl Texture {
             height: height,
         })
     }
+
+        // Creates a texture with no image processing
+        // Used for text rendering
+        pub fn new_from_raw_data(data: Vec<u8>, width: u32, height: u32) -> Option<Texture> {    
+            let tex = GlTexture::new();
+            tex.bind();
+            gl_texture::assign_image(data, width, height, Format::Red);
+            gl_texture::set_parameters(Wrap::ClampEdge, Filter::Linear);
+            tex.unbind();
+    
+            Some(Texture {
+                gl_tex: tex,
+                wrap: Wrap::Repeat,
+                filter: Filter::Nearest,
+                width: width,
+                height: height,
+            })
+        }
 
     pub fn bind(&self) {
         self.gl_tex.bind();
