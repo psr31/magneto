@@ -1,22 +1,44 @@
-// Texture functionality and design needs a lot of work
-
 use std::mem;
 
-pub struct Texture {
+pub enum Wrap {
+    Repeat,
+}
+
+impl Wrap{
+    pub fn as_gl_id(&self) -> i32 {
+        match self {
+            Wrap::Repeat => gl::REPEAT as i32,
+        }
+    }
+}
+
+pub enum Filter {
+    Nearest,
+    Linear,
+}
+
+impl Filter {
+    pub fn as_gl_id(&self) -> i32 {
+        match self {
+            Filter::Nearest => gl::NEAREST as i32,
+            Filter::Linear => gl::LINEAR as i32,
+        }
+    }
+}
+
+pub struct GlTexture {
     id: u32,
-    pub width: u32,
-    pub height: u32,
 }
 
 
-impl Texture {
-    pub fn new() -> Texture {
+impl GlTexture {
+    pub fn new() -> GlTexture {
         let mut id = 0;
         unsafe {
             gl::GenTextures(1, &mut id);
         }
 
-        Texture { id: id, width: 0, height: 0 }
+        GlTexture { id: id }
     }
 
     pub fn bind(&self) {
@@ -44,20 +66,11 @@ pub fn assign_image(data: Vec<u8>, w: u32, h: u32) {
     }
 }
 
-pub fn basic_params() {
+pub fn set_parameters(wrap: Wrap, filter: Filter) {
     unsafe {
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32);
-    }
-}
-
-pub fn text_params() {
-    unsafe {
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, wrap.as_gl_id());
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, wrap.as_gl_id());
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, filter.as_gl_id());
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, filter.as_gl_id());
     }
 }

@@ -1,23 +1,29 @@
 pub mod shader;
 pub mod vertex_buffer;
 pub mod gl_texture;
-pub mod texture_generator;
+pub mod texture;
 pub mod base_rectangle;
+pub mod color;
 
-pub use gl_texture::Texture;
+// Public uses
+pub use gl_texture::GlTexture;
+pub use texture::Texture;
+pub use color::Color;
 
 use crate::Context;
 
 pub fn enable_blending() {
     unsafe {
+        gl::Enable(gl::MULTISAMPLE);
         gl::Enable(gl::BLEND);
+        gl::BlendEquation(gl::FUNC_ADD);
         gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
     }
 }
 
-pub fn clear(r: f32, g: f32, b: f32, a: f32) {
+pub fn clear(_ctx: &mut Context, c: Color) {
     unsafe {
-        gl::ClearColor(r, g, b, a);
+        gl::ClearColor(c.r, c.g, c.b, c.a);
         gl::Clear(gl::COLOR_BUFFER_BIT);
     }
 }
@@ -27,7 +33,7 @@ pub fn swap(context: &mut Context) {
 }
 
 // Draw rectangle
-pub fn draw_rect(ctx: &mut Context, x: f32, y: f32, w: f32, h: f32, c: (f32, f32, f32)) {
+pub fn draw_rect(ctx: &mut Context, x: f32, y: f32, w: f32, h: f32, c: Color) {
     ctx.color_rect.vao.bind();
     ctx.color_rect.program.bind();
     let proj = glam::Mat4::orthographic_rh_gl(0.0, ctx.viewport_width, ctx.viewport_height, 0.0, -1.0, 0.0);
@@ -36,7 +42,7 @@ pub fn draw_rect(ctx: &mut Context, x: f32, y: f32, w: f32, h: f32, c: (f32, f32
     model = model * glam::Mat4::from_scale(glam::vec3(w, h, 0.0));
     shader::uniform_mat4(&ctx.color_rect.program, "model", model);
     shader::uniform_mat4(&ctx.color_rect.program, "proj", proj);
-    shader::uniform_vec3(&ctx.color_rect.program, "color", glam::vec3(c.0, c.1, c.2));
+    shader::uniform_vec3(&ctx.color_rect.program, "color", glam::vec3(c.r, c.g, c.b));
     vertex_buffer::draw_arrays(6);
     ctx.color_rect.vao.unbind();
     ctx.color_rect.program.unbind();
