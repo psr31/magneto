@@ -3,6 +3,8 @@ use sdl2::video::GLContext;
 use sdl2::video::Window;
 use sdl2::Sdl;
 
+use glam::Mat4;
+
 pub mod graphics;
 use graphics::base_rectangle::BaseRectangle;
 
@@ -14,6 +16,7 @@ pub struct Context {
     sprite_rect: BaseRectangle,
     text_rect: BaseRectangle,
     ft_lib: freetype::Library,
+    projection_matrix: Mat4,
     viewport_width: f32,
     viewport_height: f32,
 }
@@ -54,6 +57,7 @@ impl Context {
             ft_lib: ft_lib,
             viewport_width: window_width as f32,
             viewport_height: window_height as f32,
+            projection_matrix: Mat4::orthographic_rh_gl(0.0, window_width as f32, window_height as f32, 0.0, -1.0, 0.0),
         }
     }
 }

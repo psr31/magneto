@@ -11,6 +11,8 @@ pub use gl_texture::GlTexture;
 pub use texture::Texture;
 pub use color::Color;
 pub use text::Font;
+pub use text::draw_text;
+pub use text::Text;
 
 use crate::Context;
 
@@ -56,12 +58,11 @@ pub fn draw_texture(ctx: &mut Context, texture: &Texture, x: f32, y: f32) {
     ctx.sprite_rect.vao.bind();
     ctx.sprite_rect.program.bind();
     texture.bind();
-    let proj = glam::Mat4::orthographic_rh_gl(0.0, ctx.viewport_width, ctx.viewport_height, 0.0, -1.0, 0.0);
     let mut model = glam::Mat4::identity();
     model = model * glam::Mat4::from_translation(glam::vec3(x, y, 0.0));
     model = model * glam::Mat4::from_scale(glam::vec3(texture.width as f32, texture.height as f32, 0.0));
     shader::uniform_mat4(&ctx.sprite_rect.program, "model", model);
-    shader::uniform_mat4(&ctx.sprite_rect.program, "proj", proj);
+    shader::uniform_mat4(&ctx.sprite_rect.program, "proj", ctx.projection_matrix);
     vertex_buffer::draw_arrays(6);
     texture.unbind();
     ctx.sprite_rect.vao.unbind();
@@ -72,12 +73,11 @@ pub fn draw_texture_sized(ctx: &mut Context, texture: &Texture, x: f32, y: f32, 
     ctx.sprite_rect.vao.bind();
     ctx.sprite_rect.program.bind();
     texture.bind();
-    let proj = glam::Mat4::orthographic_rh_gl(0.0, ctx.viewport_width, ctx.viewport_height, 0.0, -1.0, 0.0);
     let mut model = glam::Mat4::identity();
     model = model * glam::Mat4::from_translation(glam::vec3(x, y, 0.0));
     model = model * glam::Mat4::from_scale(glam::vec3(w, h, 0.0));
     shader::uniform_mat4(&ctx.sprite_rect.program, "model", model);
-    shader::uniform_mat4(&ctx.sprite_rect.program, "proj", proj);
+    shader::uniform_mat4(&ctx.sprite_rect.program, "proj", ctx.projection_matrix);
     vertex_buffer::draw_arrays(6);
     texture.unbind();
     ctx.sprite_rect.vao.unbind();
@@ -88,12 +88,11 @@ pub fn draw_texture_scaled(ctx: &mut Context, texture: &Texture, x: f32, y: f32,
     ctx.sprite_rect.vao.bind();
     ctx.sprite_rect.program.bind();
     texture.bind();
-    let proj = glam::Mat4::orthographic_rh_gl(0.0, ctx.viewport_width, ctx.viewport_height, 0.0, -1.0, 0.0);
     let mut model = glam::Mat4::identity();
     model = model * glam::Mat4::from_translation(glam::vec3(x, y, 0.0));
     model = model * glam::Mat4::from_scale(glam::vec3(texture.width as f32 * xs, texture.height as f32 * ys, 0.0));
     shader::uniform_mat4(&ctx.sprite_rect.program, "model", model);
-    shader::uniform_mat4(&ctx.sprite_rect.program, "proj", proj);
+    shader::uniform_mat4(&ctx.sprite_rect.program, "proj", ctx.projection_matrix);
     vertex_buffer::draw_arrays(6);
     texture.unbind();
     ctx.sprite_rect.vao.unbind();
