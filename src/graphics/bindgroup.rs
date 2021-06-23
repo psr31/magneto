@@ -15,8 +15,10 @@ impl<'a> BindGroupBuilder<'a> {
 
     // Pushes both a texture and a texture sampler onto the resources (in that order)
     pub fn with_texture(mut self, texture: &'a Texture) -> Self {
-        self.resources.push(wgpu::BindingResource::TextureView(&texture.view));
-        self.resources.push(wgpu::BindingResource::Sampler(&texture.sampler));
+        self.resources
+            .push(wgpu::BindingResource::TextureView(&texture.view));
+        self.resources
+            .push(wgpu::BindingResource::Sampler(&texture.sampler));
         self
     }
 
@@ -28,16 +30,16 @@ impl<'a> BindGroupBuilder<'a> {
 
     // Builds the BindGroup
     pub fn build(self, dpy: &Display) -> wgpu::BindGroup {
-        let entries: Vec<wgpu::BindGroupEntry> = self.resources
+        let entries: Vec<wgpu::BindGroupEntry> = self
+            .resources
             .into_iter()
             .enumerate()
-            .map(|(i, r)| {
-                wgpu::BindGroupEntry {
-                    binding: i as u32,
-                    resource: r,
-                }
-            }).collect();
-        
+            .map(|(i, r)| wgpu::BindGroupEntry {
+                binding: i as u32,
+                resource: r,
+            })
+            .collect();
+
         dpy.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: None,
             layout: self.layout,
@@ -47,7 +49,7 @@ impl<'a> BindGroupBuilder<'a> {
 }
 
 pub struct BglBuilder {
-    entries: Vec<wgpu::BindGroupLayoutEntry>
+    entries: Vec<wgpu::BindGroupLayoutEntry>,
 }
 
 impl BglBuilder {
@@ -104,9 +106,10 @@ impl BglBuilder {
     }
 
     pub fn build(self, dpy: &Display) -> wgpu::BindGroupLayout {
-        dpy.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: None,
-            entries: &self.entries,
-        })
+        dpy.device
+            .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: None,
+                entries: &self.entries,
+            })
     }
 }

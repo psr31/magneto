@@ -1,5 +1,5 @@
-use std::mem::size_of;
 use crate::graphics::Display;
+use std::mem::size_of;
 
 pub trait HasLayout {
     fn layout(shader_offset: u32) -> Vec<wgpu::VertexAttribute>;
@@ -47,14 +47,28 @@ impl RenderPipelineBuilder {
     }
 
     pub fn push_vertex_buffer_layout<T: HasLayout>(&mut self) -> &mut Self {
-        let shader_offset = self.buffer_layouts.iter().map(|(t, _)| t.attribute_count()).sum();
-        self.buffer_layouts.push((BufferLayoutType::Vertex(T::layout(shader_offset)), size_of::<T>() as u64));
+        let shader_offset = self
+            .buffer_layouts
+            .iter()
+            .map(|(t, _)| t.attribute_count())
+            .sum();
+        self.buffer_layouts.push((
+            BufferLayoutType::Vertex(T::layout(shader_offset)),
+            size_of::<T>() as u64,
+        ));
         self
     }
 
     pub fn push_instance_buffer_layout<T: HasLayout>(&mut self) -> &mut Self {
-        let shader_offset = self.buffer_layouts.iter().map(|(t, _)| t.attribute_count()).sum();
-        self.buffer_layouts.push((BufferLayoutType::Instance(T::layout(shader_offset)), size_of::<T>() as u64));
+        let shader_offset = self
+            .buffer_layouts
+            .iter()
+            .map(|(t, _)| t.attribute_count())
+            .sum();
+        self.buffer_layouts.push((
+            BufferLayoutType::Instance(T::layout(shader_offset)),
+            size_of::<T>() as u64,
+        ));
         self
     }
 
@@ -70,7 +84,10 @@ impl RenderPipelineBuilder {
     }
 
     pub fn build(&mut self, dpy: &Display) -> wgpu::RenderPipeline {
-        let module = self.module.as_ref().expect("Cannot construct render pipeline without shader module.");
+        let module = self
+            .module
+            .as_ref()
+            .expect("Cannot construct render pipeline without shader module.");
 
         let mut buffers = Vec::new();
         for vb in &self.buffer_layouts {
@@ -81,7 +98,7 @@ impl RenderPipelineBuilder {
                         step_mode: wgpu::InputStepMode::Vertex,
                         attributes: &v,
                     });
-                },
+                }
                 (BufferLayoutType::Instance(v), s) => {
                     buffers.push(wgpu::VertexBufferLayout {
                         array_stride: *s,
@@ -92,38 +109,39 @@ impl RenderPipelineBuilder {
             }
         }
 
-        dpy.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: self.label,
-            layout: self.layout.as_ref(),
-            vertex: wgpu::VertexState {
-                module: &module,
-                entry_point: self.module_entry_point,
-                buffers: &buffers,
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: module,
-                entry_point: self.module_entry_point,
-                targets: &[wgpu::ColorTargetState {
-                    format: dpy.sc_desc.format,
-                    blend: Some(wgpu::BlendState::REPLACE),
-                    write_mask: wgpu::ColorWrite::ALL,
-                }]
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                strip_index_format: None,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: Some(wgpu::Face::Back),
-                polygon_mode: wgpu::PolygonMode::Fill,
-                ..Default::default()
-            },
-            depth_stencil: self.depth_state.to_owned(),
-            multisample: wgpu::MultisampleState {
-                count: 1,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
-        })
+        dpy.device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: self.label,
+                layout: self.layout.as_ref(),
+                vertex: wgpu::VertexState {
+                    module: &module,
+                    entry_point: self.module_entry_point,
+                    buffers: &buffers,
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: module,
+                    entry_point: self.module_entry_point,
+                    targets: &[wgpu::ColorTargetState {
+                        format: dpy.sc_desc.format,
+                        blend: Some(wgpu::BlendState::REPLACE),
+                        write_mask: wgpu::ColorWrite::ALL,
+                    }],
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    strip_index_format: None,
+                    front_face: wgpu::FrontFace::Ccw,
+                    cull_mode: Some(wgpu::Face::Back),
+                    polygon_mode: wgpu::PolygonMode::Fill,
+                    ..Default::default()
+                },
+                depth_stencil: self.depth_state.to_owned(),
+                multisample: wgpu::MultisampleState {
+                    count: 1,
+                    mask: !0,
+                    alpha_to_coverage_enabled: false,
+                },
+            })
     }
 }
 

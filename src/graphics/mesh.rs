@@ -3,8 +3,7 @@ use std::ops::Range;
 use genmesh::generators::{Cube, Plane};
 use genmesh::{Triangulate, Vertices};
 
-use crate::graphics::{Vertex, Display, create_init_vertex_buffer};
-
+use crate::graphics::{create_init_vertex_buffer, Display, Vertex};
 
 /// Represents a buffer of vertices and an optional buffer of indices.
 ///
@@ -25,14 +24,17 @@ impl Mesh {
         V: Vertex,
     {
         let verts: Vec<V> = Cube::new()
-            .map(|genmesh::Quad {x,y,z,w}| {
+            .map(|genmesh::Quad { x, y, z, w }| {
                 genmesh::Quad::new(
                     V::with_features(x.pos.into(), x.normal.into(), [0., 0.]),
                     V::with_features(y.pos.into(), y.normal.into(), [1., 0.]),
                     V::with_features(z.pos.into(), z.normal.into(), [1., 1.]),
                     V::with_features(w.pos.into(), w.normal.into(), [0., 1.]),
                 )
-            }).triangulate().vertices().collect();
+            })
+            .triangulate()
+            .vertices()
+            .collect();
 
         Mesh {
             vertex_buffer: create_init_vertex_buffer(bytemuck::cast_slice(&verts), dpy),
@@ -42,19 +44,22 @@ impl Mesh {
     }
 
     /// Convenience function to create a plane mesh
-    pub fn plane<V>(dpy: &Display) -> Mesh 
+    pub fn plane<V>(dpy: &Display) -> Mesh
     where
         V: Vertex,
     {
         let verts: Vec<V> = Plane::new()
-            .map(|genmesh::Quad {x,y,z,w}| {
+            .map(|genmesh::Quad { x, y, z, w }| {
                 genmesh::Quad::new(
                     V::with_features(x.pos.into(), x.normal.into(), [0., 0.]),
                     V::with_features(y.pos.into(), y.normal.into(), [1., 0.]),
                     V::with_features(z.pos.into(), z.normal.into(), [1., 1.]),
                     V::with_features(w.pos.into(), w.normal.into(), [0., 1.]),
                 )
-            }).triangulate().vertices().collect();
+            })
+            .triangulate()
+            .vertices()
+            .collect();
 
         Mesh {
             vertex_buffer: create_init_vertex_buffer(bytemuck::cast_slice(&verts), dpy),
@@ -65,7 +70,10 @@ impl Mesh {
 
     /// Draws range `instances` of the mesh using `renderpass`.
     /// If an index buffer is present, it will draw indexed.
-    pub fn draw<'a, 'b>(&'b mut self, renderpass: &mut wgpu::RenderPass<'a>, instances: Range<u32>) where 'b: 'a {
+    pub fn draw<'a, 'b>(&'b mut self, renderpass: &mut wgpu::RenderPass<'a>, instances: Range<u32>)
+    where
+        'b: 'a,
+    {
         renderpass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         if let Some(ref ib) = self.index_buffer {
             renderpass.set_index_buffer(ib.slice(..), wgpu::IndexFormat::Uint32);

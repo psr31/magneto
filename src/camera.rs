@@ -1,5 +1,5 @@
+use nalgebra::{vector, Matrix4, Point3, Vector3};
 use winit::event::VirtualKeyCode as Keycode;
-use nalgebra::{Matrix4, Point3, Vector3, vector};
 
 type KeySet = std::collections::HashSet<Keycode>;
 

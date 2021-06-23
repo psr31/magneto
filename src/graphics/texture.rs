@@ -1,6 +1,6 @@
-use image::EncodableLayout;
-use anyhow::Result;
 use super::Display;
+use anyhow::Result;
+use image::EncodableLayout;
 
 pub struct Image {
     pub data: Vec<u8>,
@@ -11,7 +11,7 @@ pub struct Image {
 impl Image {
     pub fn load_from_memory(src: &[u8]) -> Result<Image> {
         let image = image::load_from_memory(src)?.to_rgba8();
-        
+
         Ok(Image {
             data: image.as_bytes().to_vec(),
             size: wgpu::Extent3d {
@@ -36,7 +36,11 @@ pub struct Texture {
 }
 
 impl Texture {
-    pub fn new_from_bytes(dpy: &Display, src: &[u8], label: Option<&'static str>) -> Result<Texture> {
+    pub fn new_from_bytes(
+        dpy: &Display,
+        src: &[u8],
+        label: Option<&'static str>,
+    ) -> Result<Texture> {
         let image = Image::load_from_memory(src)?;
         let texture = dpy.device.create_texture(&wgpu::TextureDescriptor {
             label: label,
@@ -56,9 +60,9 @@ impl Texture {
             },
             &image.data,
             image.layout,
-            image.size
+            image.size,
         );
-        
+
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
         let sampler = dpy.device.create_sampler(&wgpu::SamplerDescriptor {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
@@ -73,7 +77,7 @@ impl Texture {
         Ok(Texture {
             texture,
             view,
-            sampler
+            sampler,
         })
     }
 
@@ -103,12 +107,14 @@ impl Texture {
             ..Default::default()
         });
 
-        let view = texture.create_view(&wgpu::TextureViewDescriptor { ..Default::default() });
+        let view = texture.create_view(&wgpu::TextureViewDescriptor {
+            ..Default::default()
+        });
 
         Texture {
             texture,
             sampler,
-            view
+            view,
         }
     }
 }

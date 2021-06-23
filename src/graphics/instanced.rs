@@ -1,9 +1,9 @@
 use bytemuck::{Pod, Zeroable};
 
-use super::{Display, Renderable, HasLayout, Mesh, create_init_vertex_buffer};
+use super::{create_init_vertex_buffer, Display, HasLayout, Mesh, Renderable};
 
 /// Represents a Mesh with a set of instances.
-pub struct Instanced<T> 
+pub struct Instanced<T>
 where
     T: HasLayout + Pod + Zeroable,
 {
@@ -36,13 +36,16 @@ where
     ///
     /// You must call this before rendering the instances.
     pub fn create_instance_buffer(&mut self, dpy: &Display) {
-        self.instance_buffer = Some(create_init_vertex_buffer(bytemuck::cast_slice(&self.instances), dpy));
+        self.instance_buffer = Some(create_init_vertex_buffer(
+            bytemuck::cast_slice(&self.instances),
+            dpy,
+        ));
     }
 }
 
 impl<T> Renderable for Instanced<T>
 where
-    T: HasLayout + Pod + Zeroable
+    T: HasLayout + Pod + Zeroable,
 {
     /// Renders each instance contained with the index buffer.
     ///
@@ -56,9 +59,12 @@ where
     /// * New instances have been pushed since called `create_instance_buffer`.
     fn render<'a, 'b>(&'b mut self, renderpass: &mut wgpu::RenderPass<'a>)
     where
-        'b: 'a
+        'b: 'a,
     {
-        let buffer = self.instance_buffer.as_ref().expect("Cannot render instanced without first creating an instance buffer.");
+        let buffer = self
+            .instance_buffer
+            .as_ref()
+            .expect("Cannot render instanced without first creating an instance buffer.");
         renderpass.set_vertex_buffer(1, buffer.slice(..));
         self.mesh.draw(renderpass, 0..self.instances.len() as u32);
     }

@@ -1,13 +1,13 @@
-use bytemuck::{Pod, Zeroable};
 use super::HasLayout;
+use bytemuck::{Pod, Zeroable};
 
 /// `Vertex` defines any data which is to be sent to the GPU in a vertex buffer.
 ///
-/// Must also implement the `HasLayout` trait (for layout of values) 
+/// Must also implement the `HasLayout` trait (for layout of values)
 /// as well as the `Pod` and `Zeroable` traits (for converison of data into bytes).
-pub trait Vertex : HasLayout + Pod + Zeroable {
+pub trait Vertex: HasLayout + Pod + Zeroable {
     /// Create `Self` with the provided features. Note that you do not have to use all of this data.
-    fn with_features(position: [f32; 3], normal: [f32; 3], texture_coord: [f32; 2]) -> Self; 
+    fn with_features(position: [f32; 3], normal: [f32; 3], texture_coord: [f32; 2]) -> Self;
 }
 
 /// Basic Vertex Representation.
