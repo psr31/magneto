@@ -1,96 +1,114 @@
-/* 
-   Plans to add future texture builder, in which all properties 
-   (and even image manipulation) can be specified
-*/
+use image::EncodableLayout;
+use anyhow::Result;
+use super::Display;
 
-use crate::graphics::GlTexture;
-use crate::graphics::gl_texture::{self, Wrap, Filter, Format};
+pub struct Image {
+    pub data: Vec<u8>,
+    pub size: wgpu::Extent3d,
+    pub layout: wgpu::ImageDataLayout,
+}
 
-use std::path::Path;
+impl Image {
+    pub fn load_from_memory(src: &[u8]) -> Result<Image> {
+        let image = image::load_from_memory(src)?.to_rgba8();
+        
+        Ok(Image {
+            data: image.as_bytes().to_vec(),
+            size: wgpu::Extent3d {
+                width: image.width(),
+                height: image.height(),
+                depth_or_array_layers: 1,
+            },
+            layout: wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: std::num::NonZeroU32::new(image.width() * 4),
+                rows_per_image: std::num::NonZeroU32::new(image.height()),
+            },
+        })
+    }
+}
 
-// A more convenient wrapper around a GlTexture
+#[derive(Debug)]
 pub struct Texture {
-    pub gl_tex: GlTexture,
-    pub wrap: Wrap,
-    pub filter: Filter,
-    pub width: u32,
-    pub height: u32,
+    pub texture: wgpu::Texture,
+    pub view: wgpu::TextureView,
+    pub sampler: wgpu::Sampler,
 }
 
 impl Texture {
-    // Loads a texture from the specified path
-    pub fn new(path: &Path) -> Option<Texture> {
-        let dimage = match image::open(&path) {
-            Ok(a) => a,
-            Err(_) => return None,
-        };
+    pub fn new_from_bytes(dpy: &Display, src: &[u8], label: Option<&'static str>) -> Result<Texture> {
+        let image = Image::load_from_memory(src)?;
+        let texture = dpy.device.create_texture(&wgpu::TextureDescriptor {
+            label: label,
+            size: image.size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_DST,
+        });
 
-        let image_buffer = dimage.flipv().to_rgba();
-        let (width, height) = image_buffer.dimensions();
+        dpy.queue.write_texture(
+            wgpu::ImageCopyTexture {
+                texture: &texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+            },
+            &image.data,
+            image.layout,
+            image.size
+        );
         
-        let tex = GlTexture::new();
-        tex.bind();
-        gl_texture::assign_image(image_buffer.into_raw(), width, height, Format::Rgba);
-        gl_texture::set_parameters(Wrap::Repeat, Filter::Nearest);
-        tex.unbind();
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let sampler = dpy.device.create_sampler(&wgpu::SamplerDescriptor {
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
 
-        Some(Texture {
-            gl_tex: tex,
-            wrap: Wrap::Repeat,
-            filter: Filter::Nearest,
-            width: width,
-            height: height,
+        Ok(Texture {
+            texture,
+            view,
+            sampler
         })
     }
 
-    // Loads a texture from memory
-    pub fn new_from_memory(data: Vec<u8>) -> Option<Texture> {
-        let dimage = match image::load_from_memory(&data) {
-            Ok(a) => a,
-            Err(_) => return None,
-        };
+    // TODO: Make sampler usable
+    pub fn new_depth_texture(dpy: &Display) -> Texture {
+        let texture = dpy.device.create_texture(&wgpu::TextureDescriptor {
+            label: None,
+            size: wgpu::Extent3d {
+                width: dpy.sc_desc.width,
+                height: dpy.sc_desc.height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Depth32Float,
+            usage: wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::RENDER_ATTACHMENT,
+        });
 
-        let image_buffer = dimage.flipv().to_rgba();
-        let (width, height) = image_buffer.dimensions();
-        
-        let tex = GlTexture::new();
-        tex.bind();
-        gl_texture::assign_image(image_buffer.into_raw(), width, height, Format::Rgba);
-        gl_texture::set_parameters(Wrap::Repeat, Filter::Nearest);
-        tex.unbind();
+        let sampler = dpy.device.create_sampler(&wgpu::SamplerDescriptor {
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
 
-        Some(Texture {
-            gl_tex: tex,
-            wrap: Wrap::Repeat,
-            filter: Filter::Nearest,
-            width: width,
-            height: height,
-        })
-    }
+        let view = texture.create_view(&wgpu::TextureViewDescriptor { ..Default::default() });
 
-        // Creates a texture with no image processing
-        // Used for text rendering
-        pub fn new_from_raw_data(data: Vec<u8>, width: u32, height: u32) -> Option<Texture> {    
-            let tex = GlTexture::new();
-            tex.bind();
-            gl_texture::assign_image(data, width, height, Format::Red);
-            gl_texture::set_parameters(Wrap::ClampEdge, Filter::Linear);
-            tex.unbind();
-    
-            Some(Texture {
-                gl_tex: tex,
-                wrap: Wrap::Repeat,
-                filter: Filter::Nearest,
-                width: width,
-                height: height,
-            })
+        Texture {
+            texture,
+            sampler,
+            view
         }
-
-    pub fn bind(&self) {
-        self.gl_tex.bind();
-    }
-
-    pub fn unbind(&self) {
-        self.gl_tex.unbind();
     }
 }
