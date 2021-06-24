@@ -3,7 +3,9 @@ use std::ops::Range;
 use genmesh::generators::{Cube, Plane};
 use genmesh::{Triangulate, Vertices};
 
-use crate::graphics::{create_init_vertex_buffer, Display, Vertex};
+use crate::graphics::Vertex;
+
+use super::DeviceUtilExt;
 
 /// Represents a buffer of vertices and an optional buffer of indices.
 ///
@@ -18,12 +20,36 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    /// Convenience function to create a cube mesh
-    pub fn cube<V>(dpy: &Display) -> Mesh
+    /// Builds a mesh from the given vertices.
+    pub fn from_vertices<V>(device: &wgpu::Device, vertices: &[V]) -> Mesh
     where
         V: Vertex,
     {
-        let verts: Vec<V> = Cube::new()
+        Mesh {
+            vertex_buffer: device.init_vertex_buffer(bytemuck::cast_slice(vertices)),
+            index_buffer: None,
+            count: vertices.len() as u32,
+        }
+    }
+
+    /// Builds a mesh from the given vertices and corresponding indices.
+    pub fn from_indexed_vertices<V>(device: &wgpu::Device, vertices: &[V], indices: &[u32]) -> Mesh 
+    where
+        V: Vertex,
+    {
+        Mesh {
+            vertex_buffer: device.init_vertex_buffer(bytemuck::cast_slice(vertices)),
+            index_buffer: Some(device.init_index_buffer(indices)),
+            count: indices.len() as u32,
+        }
+    }
+
+    /// Convenience function to create a cube mesh
+    pub fn cube<V>(device: &wgpu::Device) -> Mesh
+    where
+        V: Vertex,
+    {
+        let vertices: Vec<V> = Cube::new()
             .map(|genmesh::Quad { x, y, z, w }| {
                 genmesh::Quad::new(
                     V::with_features(x.pos.into(), x.normal.into(), [0., 0.]),
@@ -37,18 +63,18 @@ impl Mesh {
             .collect();
 
         Mesh {
-            vertex_buffer: create_init_vertex_buffer(bytemuck::cast_slice(&verts), dpy),
+            vertex_buffer: device.init_vertex_buffer(bytemuck::cast_slice(&vertices)),
             index_buffer: None,
-            count: verts.len() as u32,
+            count: vertices.len() as u32,
         }
     }
 
     /// Convenience function to create a plane mesh
-    pub fn plane<V>(dpy: &Display) -> Mesh
+    pub fn plane<V>(device: &wgpu::Device) -> Mesh
     where
         V: Vertex,
     {
-        let verts: Vec<V> = Plane::new()
+        let vertices: Vec<V> = Plane::new()
             .map(|genmesh::Quad { x, y, z, w }| {
                 genmesh::Quad::new(
                     V::with_features(x.pos.into(), x.normal.into(), [0., 0.]),
@@ -62,9 +88,9 @@ impl Mesh {
             .collect();
 
         Mesh {
-            vertex_buffer: create_init_vertex_buffer(bytemuck::cast_slice(&verts), dpy),
+            vertex_buffer: device.init_vertex_buffer(bytemuck::cast_slice(&vertices)),
             index_buffer: None,
-            count: verts.len() as u32,
+            count: vertices.len() as u32,
         }
     }
 

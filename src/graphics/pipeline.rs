@@ -1,21 +1,20 @@
-use crate::graphics::Display;
 use std::mem::size_of;
 
 pub trait HasLayout {
     fn layout(shader_offset: u32) -> Vec<wgpu::VertexAttribute>;
 }
 
-pub struct RenderPipelineBuilder {
+pub struct RenderPipelineBuilder<'a> {
     label: Option<&'static str>,
-    module: Option<wgpu::ShaderModule>,
+    module: Option<&'a wgpu::ShaderModule>,
     module_entry_point: &'static str,
-    layout: Option<wgpu::PipelineLayout>,
+    layout: Option<&'a wgpu::PipelineLayout>,
     buffer_layouts: Vec<(BufferLayoutType, u64)>,
     depth_state: Option<wgpu::DepthStencilState>,
 }
 
-impl RenderPipelineBuilder {
-    pub fn new() -> RenderPipelineBuilder {
+impl<'a> RenderPipelineBuilder<'a> {
+    pub fn new() -> RenderPipelineBuilder<'a> {
         RenderPipelineBuilder {
             label: None,
             module: None,
@@ -31,7 +30,7 @@ impl RenderPipelineBuilder {
         self
     }
 
-    pub fn with_module(&mut self, module: wgpu::ShaderModule) -> &mut Self {
+    pub fn with_module(&mut self, module: &'a wgpu::ShaderModule) -> &mut Self {
         self.module = Some(module);
         self
     }
@@ -41,7 +40,7 @@ impl RenderPipelineBuilder {
         self
     }
 
-    pub fn with_layout(&mut self, layout: wgpu::PipelineLayout) -> &mut Self {
+    pub fn with_layout(&mut self, layout: &'a wgpu::PipelineLayout) -> &mut Self {
         self.layout = Some(layout);
         self
     }
@@ -83,10 +82,9 @@ impl RenderPipelineBuilder {
         self
     }
 
-    pub fn build(&mut self, dpy: &Display) -> wgpu::RenderPipeline {
+    pub fn build(&mut self, device: &wgpu::Device, format: wgpu::TextureFormat) -> wgpu::RenderPipeline {
         let module = self
             .module
-            .as_ref()
             .expect("Cannot construct render pipeline without shader module.");
 
         let mut buffers = Vec::new();
@@ -109,12 +107,12 @@ impl RenderPipelineBuilder {
             }
         }
 
-        dpy.device
+        device
             .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: self.label,
-                layout: self.layout.as_ref(),
+                layout: self.layout,
                 vertex: wgpu::VertexState {
-                    module: &module,
+                    module: module,
                     entry_point: self.module_entry_point,
                     buffers: &buffers,
                 },
@@ -122,7 +120,7 @@ impl RenderPipelineBuilder {
                     module: module,
                     entry_point: self.module_entry_point,
                     targets: &[wgpu::ColorTargetState {
-                        format: dpy.sc_desc.format,
+                        format: format,
                         blend: Some(wgpu::BlendState::REPLACE),
                         write_mask: wgpu::ColorWrite::ALL,
                     }],

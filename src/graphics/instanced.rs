@@ -1,6 +1,7 @@
 use bytemuck::{Pod, Zeroable};
 
-use super::{create_init_vertex_buffer, Display, HasLayout, Mesh, Renderable};
+use crate::graphics::{HasLayout, Mesh, Renderable, DeviceUtilExt};
+
 
 /// Represents a Mesh with a set of instances.
 pub struct Instanced<T>
@@ -24,6 +25,14 @@ where
         }
     }
 
+    pub fn from_mesh_instances(mesh: Mesh, instances: &[T]) -> Instanced<T> {
+        Instanced {
+            mesh,
+            instances: instances.to_vec(),
+            instance_buffer: None,
+        }
+    }
+
     pub fn push_instance(&mut self, inst: T) {
         self.instances.push(inst);
     }
@@ -35,11 +44,8 @@ where
     /// Updates the internal instance buffer using the pushed instances.
     ///
     /// You must call this before rendering the instances.
-    pub fn create_instance_buffer(&mut self, dpy: &Display) {
-        self.instance_buffer = Some(create_init_vertex_buffer(
-            bytemuck::cast_slice(&self.instances),
-            dpy,
-        ));
+    pub fn create_instance_buffer(&mut self, device: &wgpu::Device) {
+        self.instance_buffer = Some(device.init_vertex_buffer(bytemuck::cast_slice(&self.instances)));
     }
 }
 
